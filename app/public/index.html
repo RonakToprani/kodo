@@ -1,116 +1,227 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="midnight">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Kodo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
   <!-- ─── Header ─────────────────────────────────────────── -->
   <header>
-    <h1 class="logo">Kodo</h1>
+    <div class="header-left">
+      <div class="orb-wrap">
+        <div class="orb-ring"></div>
+        <div class="orb-core"></div>
+      </div>
+      <div class="header-brand">
+        <span class="logo">Kodo</span>
+        <span class="logo-sub">Productivity</span>
+      </div>
+    </div>
     <div class="header-actions">
-      <button id="mode-toggle" class="header-btn" title="Switch view mode">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-        </svg>
-      </button>
-      <button id="notes-toggle" class="header-btn" title="Open notes">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-        </svg>
-      </button>
+      <button class="btn" id="btn-settings" title="Settings">⚙ Settings</button>
+      <button class="btn" id="btn-completed" title="Completed tasks">✓ Completed</button>
+      <button class="btn" id="btn-today" title="Jump to today">☀ Today</button>
+      <button class="btn" id="btn-notes" title="Notes">✎ Notes</button>
     </div>
   </header>
 
   <!-- ─── Main Content ───────────────────────────────────── -->
   <main>
 
-    <!-- Input -->
-    <section class="input-section">
-      <div class="input-wrapper">
+    <!-- Brain Dump Input -->
+    <section class="input-wrap">
+      <div class="input-row">
         <input
           type="text"
           id="task-input"
-          placeholder="What needs to get done?"
+          class="task-input"
+          placeholder="Brain dump... (supports ~2h estimates and date phrases)"
           autocomplete="off"
           spellcheck="false"
+          oninput="previewDate(this.value)"
         >
-        <div id="loading-indicator" class="hidden">
-          <div class="spinner"></div>
-        </div>
+        <button class="submit-btn" id="submit-btn" onclick="processInput()">Process →</button>
       </div>
-      <p class="input-hint" id="input-hint">Press Enter — AI will categorize it for you</p>
+      <div class="date-preview" id="date-preview"></div>
     </section>
 
-    <!-- Buckets -->
-    <section class="buckets" id="buckets">
-      <div class="bucket" data-priority="high">
-        <div class="bucket-header">
-          <span class="bucket-dot high"></span>
-          <h2>Now</h2>
-          <span class="bucket-count" id="count-high">0</span>
-        </div>
-        <div class="bucket-tasks" id="tasks-high"></div>
-        <div class="bucket-empty" id="empty-high">No urgent tasks</div>
-      </div>
-
-      <div class="bucket" data-priority="medium">
-        <div class="bucket-header">
-          <span class="bucket-dot medium"></span>
-          <h2>Next</h2>
-          <span class="bucket-count" id="count-medium">0</span>
-        </div>
-        <div class="bucket-tasks" id="tasks-medium"></div>
-        <div class="bucket-empty" id="empty-medium">Nothing queued</div>
-      </div>
-
-      <div class="bucket" data-priority="low">
-        <div class="bucket-header">
-          <span class="bucket-dot low"></span>
-          <h2>Later</h2>
-          <span class="bucket-count" id="count-low">0</span>
-        </div>
-        <div class="bucket-tasks" id="tasks-low"></div>
-        <div class="bucket-empty" id="empty-low">All clear</div>
+    <!-- Timeline Graph -->
+    <section class="timeline-section">
+      <div class="section-label">Timeline — estimated hours</div>
+      <div class="timeline-chart-wrap" id="timeline-chart-wrap">
+        <canvas id="timeline-chart"></canvas>
+        <div class="timeline-empty hidden" id="timeline-empty">Add tasks with ~Nh estimates to see timeline</div>
       </div>
     </section>
 
-    <!-- Graphs -->
-    <section class="graphs" id="graphs-section">
-      <div class="graph-card">
-        <h3 class="graph-title">Distribution</h3>
-        <div class="chart-container donut-container">
+    <!-- Insights -->
+    <section class="insights-section">
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-num" id="stat-streak">0</div>
+          <div class="stat-lbl">day streak 🔥</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-rate">0%</div>
+          <div class="stat-lbl">completion rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-avgtime">—</div>
+          <div class="stat-lbl">avg task time</div>
+        </div>
+      </div>
+
+      <div class="insights-bottom">
+        <div class="heatmap-wrap">
+          <div class="section-label">14-Day Activity</div>
+          <div class="heatmap" id="heatmap"></div>
+        </div>
+        <div class="donut-wrap">
+          <div class="section-label">Priority Split</div>
           <canvas id="donut-chart"></canvas>
         </div>
       </div>
-      <div class="graph-card">
-        <h3 class="graph-title">7-Day Activity</h3>
-        <div class="chart-container bar-container">
-          <canvas id="bar-chart"></canvas>
+    </section>
+
+    <!-- Active Task Buckets -->
+    <section class="buckets-grid" id="buckets-grid">
+      <div class="bucket bucket-now">
+        <div class="bucket-header">
+          <span class="bucket-dot dot-now"></span>
+          <span class="bucket-label">Now</span>
+          <span class="bucket-count" id="count-now">0</span>
         </div>
+        <div class="bucket-body" id="tasks-now"></div>
+      </div>
+
+      <div class="bucket bucket-next">
+        <div class="bucket-header">
+          <span class="bucket-dot dot-next"></span>
+          <span class="bucket-label">Next</span>
+          <span class="bucket-count" id="count-next">0</span>
+        </div>
+        <div class="bucket-body" id="tasks-next"></div>
+      </div>
+
+      <div class="bucket bucket-later">
+        <div class="bucket-header">
+          <span class="bucket-dot dot-later"></span>
+          <span class="bucket-label">Later</span>
+          <span class="bucket-count" id="count-later">0</span>
+        </div>
+        <div class="bucket-body" id="tasks-later"></div>
+      </div>
+    </section>
+
+    <!-- Calendar -->
+    <section class="calendar-section">
+      <div class="calendar-card">
+        <div class="cal-nav">
+          <span class="cal-month-label" id="cal-month-label"></span>
+          <span class="cal-hint">Tasks with dates</span>
+          <div class="cal-nav-btns">
+            <button onclick="shiftMonth(-1)" title="Previous month">‹</button>
+            <button onclick="shiftMonth(0)"  title="Jump to today">●</button>
+            <button onclick="shiftMonth(1)"  title="Next month">›</button>
+          </div>
+        </div>
+        <div class="cal-day-headers">
+          <span>Mon</span><span>Tue</span><span>Wed</span>
+          <span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
       </div>
     </section>
 
   </main>
 
-  <!-- ─── Notes Slide-Out Panel ──────────────────────────── -->
-  <div id="notes-overlay" class="hidden"></div>
-  <aside id="notes-panel">
-    <div class="notes-header">
-      <h2>Notes</h2>
-      <button id="notes-close" class="notes-close-btn" aria-label="Close notes">&times;</button>
+  <!-- ─── Panel Overlay ──────────────────────────────────── -->
+  <div class="panel-overlay" id="panel-overlay" onclick="closeAllPanels()"></div>
+
+  <!-- ─── Completed Panel (right) ───────────────────────── -->
+  <aside class="panel panel-right" id="panel-completed">
+    <div class="panel-header">
+      <span>Completed</span>
+      <button onclick="closeAllPanels()" title="Close">×</button>
     </div>
-    <iframe id="memos-iframe" src="about:blank" loading="lazy"></iframe>
+    <div class="panel-body" id="completed-list"></div>
+    <div class="panel-footer">
+      <button class="load-more-btn hidden" id="load-more-btn" onclick="loadMoreCompleted()">Load more</button>
+    </div>
   </aside>
 
-  <!-- ─── Task Context Menu ──────────────────────────────── -->
-  <div id="context-menu" class="context-menu hidden">
+  <!-- ─── Settings Panel (left) ─────────────────────────── -->
+  <aside class="panel panel-left" id="panel-settings">
+    <div class="panel-header">
+      <span>Settings</span>
+      <button onclick="closeAllPanels()" title="Close">×</button>
+    </div>
+    <div class="panel-body">
+
+      <!-- Theme selector -->
+      <div class="settings-section">
+        <div class="settings-label">Theme</div>
+        <div class="theme-grid">
+          <div class="theme-card" data-theme="midnight" onclick="setTheme('midnight')">
+            <div class="theme-card-swatch" style="background:linear-gradient(135deg,#13141f 50%,#818cf8)"></div>
+            <span>Midnight</span>
+          </div>
+          <div class="theme-card" data-theme="paper" onclick="setTheme('paper')">
+            <div class="theme-card-swatch" style="background:linear-gradient(135deg,#f4f3ef 50%,#2563eb)"></div>
+            <span>Paper</span>
+          </div>
+          <div class="theme-card" data-theme="terminal" onclick="setTheme('terminal')">
+            <div class="theme-card-swatch" style="background:linear-gradient(135deg,#0d1117 50%,#39d353)"></div>
+            <span>Terminal</span>
+          </div>
+          <div class="theme-card" data-theme="zen" onclick="setTheme('zen')">
+            <div class="theme-card-swatch" style="background:linear-gradient(135deg,#252220 50%,#c4956a)"></div>
+            <span>Zen</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ollama config -->
+      <div class="settings-section">
+        <div class="settings-label">Ollama Config</div>
+        <input class="settings-input" id="settings-host" placeholder="Ollama host URL" value="http://localhost:11434">
+        <input class="settings-input" id="settings-model" placeholder="Model name" value="gemma-fast">
+        <button class="settings-save-btn" onclick="saveOllamaConfig()">Save Config</button>
+      </div>
+
+      <!-- Bulk actions -->
+      <div class="settings-section">
+        <div class="settings-label">Bulk Actions</div>
+        <button class="bulk-btn" onclick="bulkAction('complete-all')">✓ Complete All Active</button>
+        <button class="bulk-btn danger" onclick="bulkAction('clear-completed')">⚠ Delete Completed</button>
+        <a href="/api/export" class="bulk-btn export-btn" download="kodo-tasks.json">↓ Export JSON</a>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ─── Notes Panel (right) ───────────────────────────── -->
+  <aside class="panel panel-right panel-notes" id="panel-notes" style="display:flex;flex-direction:column;">
+    <div class="panel-header">
+      <span>Notes</span>
+      <button onclick="closeAllPanels()" title="Close">×</button>
+    </div>
+    <iframe id="memos-iframe" src="about:blank" loading="lazy" style="flex:1;width:100%;border:none;background:var(--bg);"></iframe>
+  </aside>
+
+  <!-- ─── Context Menu ───────────────────────────────────── -->
+  <div class="context-menu hidden" id="context-menu">
+    <button data-action="edit">Edit</button>
+    <div class="context-divider"></div>
     <button data-action="move-high">Move to Now</button>
     <button data-action="move-medium">Move to Next</button>
     <button data-action="move-low">Move to Later</button>
