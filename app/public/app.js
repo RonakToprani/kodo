@@ -107,8 +107,9 @@ async function processInput() {
   submitBtn.textContent = 'Processing...';
   datePreview.classList.remove('show');
 
-  // Extract calendar tasks from raw input
-  const datedTasks = extractDatedTasks(raw);
+  // Extract calendar tasks from raw input (titles are raw for now)
+  const datedTasks    = extractDatedTasks(raw);
+  const calendarStart = calendarTasks.length;
   datedTasks.forEach(dt => calendarTasks.push(dt));
 
   // Client-side estimate scrape (Track B, step 1 — instant)
@@ -123,6 +124,11 @@ async function processInput() {
       body: JSON.stringify({ text: cleaned }),
     });
     const task = await res.json();
+
+    // Backfill calendar entries with the SLM-rephrased title
+    for (let i = calendarStart; i < calendarStart + datedTasks.length; i++) {
+      calendarTasks[i].title = task.title;
+    }
 
     // Inject into local state + render immediately
     tasks[task.priority].unshift(task);
@@ -874,23 +880,68 @@ function parseDate(text) {
   const today  = new Date();
   today.setHours(0,0,0,0);
 
-  if (/\btoday\b/.test(t))    return new Date(today);
+  if (/\btoday\b/.test(t)) return new Date(today);
 
   if (/\btomorrow\b/.test(t)) {
     const d = new Date(today); d.setDate(d.getDate() + 1); return d;
   }
 
-  const inN = t.match(/\bin (\d+) days?\b/);
-  if (inN) {
-    const d = new Date(today); d.setDate(d.getDate() + parseInt(inN[1])); return d;
+  // "this weekend" → coming Saturday
+  if (/\bthis weekend\b/.test(t)) {
+    const d    = new Date(today);
+    const curr = d.getDay(); // 0=Sun,6=Sat
+    const diff = curr === 6 ? 0 : 6 - curr;
+    d.setDate(d.getDate() + diff);
+    return d;
   }
 
+  // "next weekend" → Saturday of next week
+  if (/\bnext weekend\b/.test(t)) {
+    const d    = new Date(today);
+    const curr = d.getDay();
+    const diff = curr === 6 ? 7 : 6 - curr + 7;
+    d.setDate(d.getDate() + diff);
+    return d;
+  }
+
+  // "next week" → coming Monday
   if (/\bnext week\b/.test(t)) {
     const d    = new Date(today);
-    const curr = d.getDay(); // 0=Sun
+    const curr = d.getDay();
     const daysToMon = curr === 0 ? 1 : 8 - curr;
     d.setDate(d.getDate() + daysToMon);
     return d;
+  }
+
+  // "next month" → 1st of next month
+  if (/\bnext month\b/.test(t)) {
+    const d = new Date(today);
+    d.setMonth(d.getMonth() + 1, 1);
+    return d;
+  }
+
+  // "end of month" / "end of the month"
+  if (/\bend of (the )?month\b/.test(t)) {
+    const d = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return d;
+  }
+
+  // "in X days"
+  const inDays = t.match(/\bin (\d+) days?\b/);
+  if (inDays) {
+    const d = new Date(today); d.setDate(d.getDate() + parseInt(inDays[1])); return d;
+  }
+
+  // "in X weeks"
+  const inWeeks = t.match(/\bin (\d+) weeks?\b/);
+  if (inWeeks) {
+    const d = new Date(today); d.setDate(d.getDate() + parseInt(inWeeks[1]) * 7); return d;
+  }
+
+  // "in X months"
+  const inMonths = t.match(/\bin (\d+) months?\b/);
+  if (inMonths) {
+    const d = new Date(today); d.setMonth(d.getMonth() + parseInt(inMonths[1])); return d;
   }
 
   const DAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
@@ -917,7 +968,7 @@ function parseDate(text) {
     return d;
   }
 
-  // Standalone weekday
+  // Standalone weekday name → next occurrence
   for (let i = 0; i < DAYS.length; i++) {
     if (new RegExp(`\\b${DAYS[i]}\\b`).test(t)) {
       const d    = new Date(today);
@@ -929,40 +980,50 @@ function parseDate(text) {
     }
   }
 
-  // Month D  or  D Month  or  Dth Month
   const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
-  const monthFirst = t.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})\b/);
-  const dayFirst   = t.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)\b/);
+  const MON_SHORT = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
 
+  // "Month D" or "Month Dth"
+  const monthFirst = t.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+(\d{1,2})(?:st|nd|rd|th)?\b/);
   if (monthFirst) {
-    const month = MONTHS.indexOf(monthFirst[1]);
+    const mIdx  = MONTHS.indexOf(monthFirst[1]) !== -1 ? MONTHS.indexOf(monthFirst[1]) : MON_SHORT.indexOf(monthFirst[1]);
     const day   = parseInt(monthFirst[2]);
-    if (month >= 0 && day >= 1 && day <= 31) {
-      const d = new Date(today.getFullYear(), month, day);
+    if (mIdx >= 0 && day >= 1 && day <= 31) {
+      const d = new Date(today.getFullYear(), mIdx, day);
       if (d < today) d.setFullYear(d.getFullYear() + 1);
       return d;
     }
   }
+
+  // "D Month" or "Dth Month"
+  const dayFirst = t.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\b/);
   if (dayFirst) {
-    const day   = parseInt(dayFirst[1]);
-    const month = MONTHS.indexOf(dayFirst[2]);
-    if (month >= 0 && day >= 1 && day <= 31) {
+    const day  = parseInt(dayFirst[1]);
+    const mIdx = MONTHS.indexOf(dayFirst[2]) !== -1 ? MONTHS.indexOf(dayFirst[2]) : MON_SHORT.indexOf(dayFirst[2]);
+    if (mIdx >= 0 && day >= 1 && day <= 31) {
+      const d = new Date(today.getFullYear(), mIdx, day);
+      if (d < today) d.setFullYear(d.getFullYear() + 1);
+      return d;
+    }
+  }
+
+  // MM/DD (e.g. 3/15 = March 15)
+  const mmdd = t.match(/\b(\d{1,2})\/(\d{1,2})\b/);
+  if (mmdd) {
+    const month = parseInt(mmdd[1]) - 1;
+    const day   = parseInt(mmdd[2]);
+    if (month >= 0 && month <= 11 && day >= 1 && day <= 31) {
       const d = new Date(today.getFullYear(), month, day);
       if (d < today) d.setFullYear(d.getFullYear() + 1);
       return d;
     }
   }
 
-  // dd/mm (European format)
-  const ddmm = t.match(/\b(\d{1,2})\/(\d{1,2})\b/);
-  if (ddmm) {
-    const day   = parseInt(ddmm[1]);
-    const month = parseInt(ddmm[2]) - 1;
-    if (day >= 1 && day <= 31 && month >= 0 && month <= 11) {
-      const d = new Date(today.getFullYear(), month, day);
-      if (d < today) d.setFullYear(d.getFullYear() + 1);
-      return d;
-    }
+  // YYYY-MM-DD or YYYY/MM/DD
+  const iso = t.match(/\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b/);
+  if (iso) {
+    const d = new Date(parseInt(iso[1]), parseInt(iso[2]) - 1, parseInt(iso[3]));
+    if (!isNaN(d)) return d;
   }
 
   return null;
