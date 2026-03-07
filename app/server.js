@@ -184,7 +184,7 @@ app.post('/api/estimate', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: 'You estimate how long a single personal task takes ONE person to complete. Reply with ONLY a decimal number in hours. Scale: quick errand or call=0.25, short focused task=0.5, typical task=1, complex task=2, large task=4. Maximum is 8. Never exceed 8.',
+            content: 'Estimate hours for ONE person to complete a single task. Reply with ONLY a decimal number (e.g. 0.25). Examples: "reply to email"=0.1, "send a text"=0.1, "make a phone call"=0.25, "book appointment"=0.25, "review short doc"=0.25, "short meeting"=0.5, "review PR"=0.5, "write short doc"=1, "implement small feature"=1.5, "implement feature"=2, "debug complex issue"=3, "build new system"=4. Most personal tasks are under 1 hour. Never exceed 8.',
           },
           { role: 'user', content: text },
         ],
@@ -200,8 +200,8 @@ app.post('/api/estimate', async (req, res) => {
     // Extract first number from response (handles "2 hours", "about 1.5", etc.)
     const match = raw.match(/\d+(\.\d+)?/);
     if (!match) return res.json({ hours: null });
-    // Clamp to a sane per-task range: 0.25h–8h
-    const hours = Math.min(8, Math.max(0.25, parseFloat(match[0])));
+    // Clamp to a sane per-task range: 0.1h–8h
+    const hours = Math.min(8, Math.max(0.1, parseFloat(match[0])));
     res.json({ hours: isNaN(hours) ? null : Math.round(hours * 4) / 4 }); // round to nearest 0.25
   } catch {
     res.json({ hours: null });
