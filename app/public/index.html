@@ -27,19 +27,20 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn" id="btn-settings" title="Settings">⚙ Settings</button>
-      <button class="btn" id="btn-completed" title="Completed tasks">✓ Completed</button>
-      <button class="btn" id="btn-today" title="Jump to today">☀ Today</button>
-      <button class="btn" id="btn-notes" title="Notes">✎ Notes</button>
+      <button class="btn" id="btn-settings" title="Settings">⚙ <span>Settings</span></button>
+      <button class="btn" id="btn-completed" title="Completed tasks">✓ <span>Completed</span></button>
+      <button class="btn" id="btn-today" title="Jump to today">☀ <span>Today</span></button>
+      <button class="btn" id="btn-notes" title="Notes">✎ <span>Notes</span></button>
     </div>
   </header>
 
   <!-- ─── Main Content ───────────────────────────────────── -->
   <main>
 
-    <!-- Brain Dump Input -->
-    <section class="input-wrap">
-      <div class="input-row">
+    <!-- Brain Dump + Timeline -->
+    <div class="mb-md">
+      <div class="input-label">// brain dump</div>
+      <div class="input-wrap">
         <input
           type="text"
           id="task-input"
@@ -52,19 +53,25 @@
         <button class="submit-btn" id="submit-btn" onclick="processInput()">Process →</button>
       </div>
       <div class="date-preview" id="date-preview"></div>
-    </section>
-
-    <!-- Timeline Graph -->
-    <section class="timeline-section">
-      <div class="section-label">Timeline — estimated hours</div>
-      <div class="timeline-chart-wrap" id="timeline-chart-wrap">
-        <canvas id="timeline-chart"></canvas>
-        <div class="timeline-empty hidden" id="timeline-empty">Add tasks with ~Nh estimates to see timeline</div>
+      <div class="timeline-section">
+        <div class="timeline-header">
+          <span class="timeline-title">// task timeline — estimated hours</span>
+          <div class="timeline-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--now)"></div>Now</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--next)"></div>Next</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--later)"></div>Later</div>
+          </div>
+        </div>
+        <div class="timeline-chart-wrap" id="timeline-chart-wrap">
+          <canvas id="timeline-chart"></canvas>
+          <div class="timeline-empty hidden" id="timeline-empty">Add tasks with ~Nh estimates to see timeline</div>
+        </div>
       </div>
-    </section>
+    </div>
 
     <!-- Insights -->
-    <section class="insights-section">
+    <div class="mt-section mb-md">
+      <div class="section-label">// insights</div>
       <div class="stat-cards">
         <div class="stat-card">
           <div class="stat-num" id="stat-streak">0</div>
@@ -79,68 +86,68 @@
           <div class="stat-lbl">avg task time</div>
         </div>
       </div>
-
-      <div class="insights-bottom">
-        <div class="heatmap-wrap">
-          <div class="section-label">14-Day Activity</div>
-          <div class="heatmap" id="heatmap"></div>
+      <div class="analytics-row">
+        <div class="chart-card">
+          <div class="chart-card-title">14-day activity</div>
+          <div class="chart-wrap">
+            <div class="heatmap" id="heatmap"></div>
+          </div>
         </div>
-        <div class="donut-wrap">
-          <div class="section-label">Priority Split</div>
-          <canvas id="donut-chart"></canvas>
+        <div class="chart-card">
+          <div class="chart-card-title">priority split</div>
+          <div class="chart-wrap">
+            <canvas id="donut-chart"></canvas>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Active Task Buckets -->
-    <section class="buckets-grid" id="buckets-grid">
-      <div class="bucket bucket-now">
-        <div class="bucket-header">
-          <span class="bucket-dot dot-now"></span>
-          <span class="bucket-label">Now</span>
-          <span class="bucket-count" id="count-now">0</span>
+    <!-- Active Tasks -->
+    <div>
+      <div class="section-label">// active tasks</div>
+      <div class="buckets-grid" id="buckets-grid">
+        <div class="bucket bucket-now">
+          <div class="bucket-header">
+            <span class="bucket-label"><span class="bucket-dot"></span>Now</span>
+            <span class="bucket-count" id="count-now">0</span>
+          </div>
+          <div class="bucket-body" id="tasks-now"></div>
         </div>
-        <div class="bucket-body" id="tasks-now"></div>
-      </div>
 
-      <div class="bucket bucket-next">
-        <div class="bucket-header">
-          <span class="bucket-dot dot-next"></span>
-          <span class="bucket-label">Next</span>
-          <span class="bucket-count" id="count-next">0</span>
+        <div class="bucket bucket-next">
+          <div class="bucket-header">
+            <span class="bucket-label"><span class="bucket-dot"></span>Next</span>
+            <span class="bucket-count" id="count-next">0</span>
+          </div>
+          <div class="bucket-body" id="tasks-next"></div>
         </div>
-        <div class="bucket-body" id="tasks-next"></div>
-      </div>
 
-      <div class="bucket bucket-later">
-        <div class="bucket-header">
-          <span class="bucket-dot dot-later"></span>
-          <span class="bucket-label">Later</span>
-          <span class="bucket-count" id="count-later">0</span>
+        <div class="bucket bucket-later">
+          <div class="bucket-header">
+            <span class="bucket-label"><span class="bucket-dot"></span>Later</span>
+            <span class="bucket-count" id="count-later">0</span>
+          </div>
+          <div class="bucket-body" id="tasks-later"></div>
         </div>
-        <div class="bucket-body" id="tasks-later"></div>
       </div>
-    </section>
+    </div>
 
     <!-- Calendar -->
-    <section class="calendar-section">
+    <div class="calendar-section mt-section">
+      <div class="section-label">// calendar — dated tasks</div>
       <div class="calendar-card">
         <div class="cal-nav">
           <span class="cal-month-label" id="cal-month-label"></span>
-          <span class="cal-hint">Tasks with dates</span>
+          <span class="cal-hint">dates parsed from brain dump · optional</span>
           <div class="cal-nav-btns">
             <button onclick="shiftMonth(-1)" title="Previous month">‹</button>
             <button onclick="shiftMonth(0)"  title="Jump to today">●</button>
             <button onclick="shiftMonth(1)"  title="Next month">›</button>
           </div>
         </div>
-        <div class="cal-day-headers">
-          <span>Mon</span><span>Tue</span><span>Wed</span>
-          <span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-        </div>
         <div class="cal-grid" id="cal-grid"></div>
       </div>
-    </section>
+    </div>
 
   </main>
 
@@ -167,50 +174,54 @@
     </div>
     <div class="panel-body">
 
-      <!-- Theme selector -->
-      <div class="settings-section">
-        <div class="settings-label">Theme</div>
-        <div class="theme-grid">
-          <div class="theme-card" data-theme="midnight" onclick="setTheme('midnight')">
-            <div class="theme-card-swatch" style="background:linear-gradient(135deg,#13141f 50%,#818cf8)"></div>
-            <span>Midnight</span>
-          </div>
-          <div class="theme-card" data-theme="paper" onclick="setTheme('paper')">
-            <div class="theme-card-swatch" style="background:linear-gradient(135deg,#f4f3ef 50%,#2563eb)"></div>
-            <span>Paper</span>
-          </div>
-          <div class="theme-card" data-theme="terminal" onclick="setTheme('terminal')">
-            <div class="theme-card-swatch" style="background:linear-gradient(135deg,#0d1117 50%,#39d353)"></div>
-            <span>Terminal</span>
-          </div>
-          <div class="theme-card" data-theme="zen" onclick="setTheme('zen')">
-            <div class="theme-card-swatch" style="background:linear-gradient(135deg,#252220 50%,#c4956a)"></div>
-            <span>Zen</span>
-          </div>
+      <!-- Theme -->
+      <div class="section-label mb-sm">// theme</div>
+      <div class="theme-grid">
+        <div class="theme-card" data-theme="midnight" onclick="setTheme('midnight')">
+          <div class="theme-card-swatch" style="background:linear-gradient(135deg,#1a1b2e,#818cf8)"></div>
+          <span>Midnight</span>
+        </div>
+        <div class="theme-card" data-theme="paper" onclick="setTheme('paper')">
+          <div class="theme-card-swatch" style="background:linear-gradient(135deg,#f8f7f4,#2563eb)"></div>
+          <span>Paper</span>
+        </div>
+        <div class="theme-card" data-theme="terminal" onclick="setTheme('terminal')">
+          <div class="theme-card-swatch" style="background:linear-gradient(135deg,#0d1117,#39d353)"></div>
+          <span>Terminal</span>
+        </div>
+        <div class="theme-card" data-theme="zen" onclick="setTheme('zen')">
+          <div class="theme-card-swatch" style="background:linear-gradient(135deg,#2c2a27,#c4956a)"></div>
+          <span>Zen</span>
         </div>
       </div>
 
-      <!-- Ollama config -->
-      <div class="settings-section">
-        <div class="settings-label">Ollama Config</div>
-        <input class="settings-input" id="settings-host" placeholder="Ollama host URL" value="http://localhost:11434">
-        <input class="settings-input" id="settings-model" placeholder="Model name" value="gemma-fast">
-        <button class="settings-save-btn" onclick="saveOllamaConfig()">Save Config</button>
+      <!-- Ollama Config -->
+      <div class="section-label mt-sm mb-sm">// ollama config</div>
+      <div class="mb-sm">
+        <div class="settings-sub-label">HOST</div>
+        <div class="input-wrap settings-input-wrap">
+          <input class="task-input" id="settings-host" placeholder="Ollama host URL">
+        </div>
       </div>
+      <div class="mb-md">
+        <div class="settings-sub-label">MODEL</div>
+        <div class="input-wrap settings-input-wrap">
+          <input class="task-input" id="settings-model" placeholder="Model name">
+        </div>
+      </div>
+      <button class="btn settings-full-btn" onclick="saveOllamaConfig()">Save Config</button>
 
-      <!-- Bulk actions -->
-      <div class="settings-section">
-        <div class="settings-label">Bulk Actions</div>
-        <button class="bulk-btn" onclick="bulkAction('complete-all')">✓ Complete All Active</button>
-        <button class="bulk-btn danger" onclick="bulkAction('clear-completed')">⚠ Delete Completed</button>
-        <a href="/api/export" class="bulk-btn export-btn" download="kodo-tasks.json">↓ Export JSON</a>
-      </div>
+      <!-- Bulk Actions -->
+      <div class="section-label mt-section mb-sm">// bulk actions</div>
+      <button class="btn settings-full-btn" onclick="bulkAction('complete-all')">✓ Complete All Active</button>
+      <button class="btn settings-full-btn danger-btn" onclick="bulkAction('clear-completed')">⚠ Delete Completed</button>
+      <a href="/api/export" class="btn settings-full-btn" download="kodo-tasks.json">↓ Export JSON</a>
 
     </div>
   </aside>
 
   <!-- ─── Notes Panel (right) ───────────────────────────── -->
-  <aside class="panel panel-right panel-notes" id="panel-notes" style="display:flex;flex-direction:column;">
+  <aside class="panel panel-right panel-notes" id="panel-notes">
     <div class="panel-header">
       <span>Notes</span>
       <button onclick="closeAllPanels()" title="Close">×</button>

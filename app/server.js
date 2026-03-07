@@ -4,7 +4,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-let OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://localhost:11434';
+let OLLAMA_HOST = process.env.OLLAMA_HOST || 'http://10.0.0.79:11434';
 let OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma-fast';
 const MEMOS_HOST = process.env.MEMOS_HOST || 'http://localhost:5230';
 

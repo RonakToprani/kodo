@@ -313,7 +313,7 @@ function buildCharts() {
       },
       options: {
         cutout: '68%',
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: true,
@@ -345,11 +345,11 @@ function buildHeatmap() {
 
   heatmap.innerHTML = data.map(d => {
     const pct    = d.count / maxCnt;
-    const height = d.count > 0 ? Math.max(pct * 100, 10) : 4;
-    const opacity= d.count > 0 ? Math.max(pct, 0.25) : 0.1;
+    const height = d.count === 0 ? 6 : Math.max(14, pct * 100);
+    const opacity= d.count === 0 ? 0.1 : 0.15 + pct * 0.85;
     return `
       <div class="heatmap-col">
-        <div class="heatmap-bar" style="height:${height}%;opacity:${opacity}"></div>
+        <div class="heatmap-bar" title="${d.count} tasks" style="height:${height}px;opacity:${opacity}"></div>
         <span class="heatmap-lbl">${esc(d.label)}</span>
       </div>`;
   }).join('');
@@ -759,6 +759,10 @@ function renderCalendar() {
 
   label.textContent = `${MONTHS[calMonth]} ${calYear}`;
 
+  // Rebuild grid from scratch (DOW headers + day cells)
+  grid.innerHTML = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+    .map(d => `<div class="cal-dow">${d}</div>`).join('');
+
   const today     = new Date();
   const firstDay  = new Date(calYear, calMonth, 1);
   // Mon = 0 ... Sun = 6
@@ -820,7 +824,7 @@ function renderCalendar() {
       </div>`);
   }
 
-  grid.innerHTML = cells.join('');
+  grid.innerHTML += cells.join('');
 }
 
 // ── Date Preview ──────────────────────────────────────────────
