@@ -182,19 +182,27 @@ app.post('/api/estimate', async (req, res) => {
       body: JSON.stringify({
         model: 'qwen2.5:1.5b',
         messages: [
-          { role: 'system', content: 'Reply with only a number. How many hours would this task take?' },
-          { role: 'user',   content: text },
+          {
+            role: 'system',
+            content: 'You estimate how long a single personal task takes ONE person to complete. Reply with ONLY a decimal number in hours. Scale: quick errand or call=0.25, short focused task=0.5, typical task=1, complex task=2, large task=4. Maximum is 8. Never exceed 8.',
+          },
+          { role: 'user', content: text },
         ],
         stream: false,
-        options: { num_predict: 10 },
+        options: { num_predict: 8, temperature: 0 },
       }),
     });
 
     if (!resp.ok) return res.json({ hours: null });
 
     const data  = await resp.json();
-    const hours = parseFloat(data.message?.content?.trim());
-    res.json({ hours: isNaN(hours) ? null : hours });
+    const raw   = data.message?.content?.trim() || '';
+    // Extract first number from response (handles "2 hours", "about 1.5", etc.)
+    const match = raw.match(/\d+(\.\d+)?/);
+    if (!match) return res.json({ hours: null });
+    // Clamp to a sane per-task range: 0.25h–8h
+    const hours = Math.min(8, Math.max(0.25, parseFloat(match[0])));
+    res.json({ hours: isNaN(hours) ? null : Math.round(hours * 4) / 4 }); // round to nearest 0.25
   } catch {
     res.json({ hours: null });
   }
