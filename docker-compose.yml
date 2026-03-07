@@ -1,0 +1,67 @@
+# =============================================================
+# Kodo — Docker Compose
+# Dashboard (8080) + Memos (5230) + Glances (61208)
+#
+# Usage:
+#   docker compose up -d --build
+#   Visit http://localhost:8080
+#
+# Environment:
+#   OLLAMA_HOST  — Ollama API URL (default: http://10.0.0.79:11434)
+#   MEMOS_HOST   — Memos URL for iframe (default: http://localhost:5230)
+# =============================================================
+
+services:
+
+  # ─── DASHBOARD — Custom Node.js App ──────────────────────
+  dashboard:
+    build: ./app
+    container_name: kodo-dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - dashboard-data:/app/data
+    environment:
+      - OLLAMA_HOST=http://10.0.0.79:11434
+      - MEMOS_HOST=http://10.0.0.86:5230
+    networks:
+      - kodo-net
+
+  # ─── MEMOS — Notes App ──────────────────────────────────
+  memos:
+    image: neosmemo/memos:stable
+    container_name: kodo-memos
+    restart: unless-stopped
+    ports:
+      - "5230:5230"
+    volumes:
+      - memos-data:/var/opt/memos
+    networks:
+      - kodo-net
+
+  # ─── GLANCES — System Stats (optional, saves ~60MB RAM) ──
+  glances:
+    image: nicolargo/glances:latest-full
+    container_name: kodo-glances
+    restart: unless-stopped
+    pid: host
+    ports:
+      - "61208:61208"
+    volumes:
+      - ./glances/glances.conf:/glances/conf/glances.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - GLANCES_OPT=-w
+    networks:
+      - kodo-net
+
+# ─── VOLUMES ──────────────────────────────────────────────
+volumes:
+  dashboard-data:
+  memos-data:
+
+# ─── NETWORK ──────────────────────────────────────────────
+networks:
+  kodo-net:
+    driver: bridge

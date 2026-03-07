@@ -1,0 +1,14 @@
+{
+  "name": "kodo-dashboard",
+  "version": "1.0.0",
+  "description": "Kōdō — Productivity Dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "better-sqlite3": "^11.6.0"
+  }
+}

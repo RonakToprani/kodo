@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Kodo</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ─── Header ─────────────────────────────────────────── -->
+  <header>
+    <h1 class="logo">Kodo</h1>
+    <div class="header-actions">
+      <button id="mode-toggle" class="header-btn" title="Switch view mode">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </button>
+      <button id="notes-toggle" class="header-btn" title="Open notes">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ─── Main Content ───────────────────────────────────── -->
+  <main>
+
+    <!-- Input -->
+    <section class="input-section">
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="task-input"
+          placeholder="What needs to get done?"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <div id="loading-indicator" class="hidden">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <p class="input-hint" id="input-hint">Press Enter — AI will categorize it for you</p>
+    </section>
+
+    <!-- Buckets -->
+    <section class="buckets" id="buckets">
+      <div class="bucket" data-priority="high">
+        <div class="bucket-header">
+          <span class="bucket-dot high"></span>
+          <h2>Now</h2>
+          <span class="bucket-count" id="count-high">0</span>
+        </div>
+        <div class="bucket-tasks" id="tasks-high"></div>
+        <div class="bucket-empty" id="empty-high">No urgent tasks</div>
+      </div>
+
+      <div class="bucket" data-priority="medium">
+        <div class="bucket-header">
+          <span class="bucket-dot medium"></span>
+          <h2>Next</h2>
+          <span class="bucket-count" id="count-medium">0</span>
+        </div>
+        <div class="bucket-tasks" id="tasks-medium"></div>
+        <div class="bucket-empty" id="empty-medium">Nothing queued</div>
+      </div>
+
+      <div class="bucket" data-priority="low">
+        <div class="bucket-header">
+          <span class="bucket-dot low"></span>
+          <h2>Later</h2>
+          <span class="bucket-count" id="count-low">0</span>
+        </div>
+        <div class="bucket-tasks" id="tasks-low"></div>
+        <div class="bucket-empty" id="empty-low">All clear</div>
+      </div>
+    </section>
+
+    <!-- Graphs -->
+    <section class="graphs" id="graphs-section">
+      <div class="graph-card">
+        <h3 class="graph-title">Distribution</h3>
+        <div class="chart-container donut-container">
+          <canvas id="donut-chart"></canvas>
+        </div>
+      </div>
+      <div class="graph-card">
+        <h3 class="graph-title">7-Day Activity</h3>
+        <div class="chart-container bar-container">
+          <canvas id="bar-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ─── Notes Slide-Out Panel ──────────────────────────── -->
+  <div id="notes-overlay" class="hidden"></div>
+  <aside id="notes-panel">
+    <div class="notes-header">
+      <h2>Notes</h2>
+      <button id="notes-close" class="notes-close-btn" aria-label="Close notes">&times;</button>
+    </div>
+    <iframe id="memos-iframe" src="about:blank" loading="lazy"></iframe>
+  </aside>
+
+  <!-- ─── Task Context Menu ──────────────────────────────── -->
+  <div id="context-menu" class="context-menu hidden">
+    <button data-action="move-high">Move to Now</button>
+    <button data-action="move-medium">Move to Next</button>
+    <button data-action="move-low">Move to Later</button>
+    <div class="context-divider"></div>
+    <button data-action="delete" class="danger">Delete</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
