@@ -201,7 +201,19 @@ app.post('/api/estimate', async (req, res) => {
     const match = raw.match(/\d+(\.\d+)?/);
     if (!match) return res.json({ hours: null });
     // Clamp to a sane per-task range: 0.1h–8h
-    const hours = Math.min(8, Math.max(0.1, parseFloat(match[0])));
+    let hours = Math.min(8, Math.max(0.1, parseFloat(match[0])));
+
+    // Keyword-based caps: small models over-estimate simple tasks.
+    // Only apply when no dev/implementation keyword is present.
+    const lower = text.toLowerCase();
+    const isDev = /\b(implement|build|create|develop|code|refactor|migrate|deploy|architect)\b/.test(lower);
+    if (!isDev) {
+      if (/\b(call|phone|ring)\b/.test(lower))                                       hours = Math.min(hours, 0.25);
+      if (/\b(book|schedule|appointment)\b/.test(lower))                             hours = Math.min(hours, 0.25);
+      if (/\b(send|reply|write).{0,20}(email|text|message|dm|slack)\b/i.test(lower)) hours = Math.min(hours, 0.25);
+      if (/\b(check|look up|verify|review)\b/.test(lower))                           hours = Math.min(hours, 0.5);
+    }
+
     res.json({ hours: isNaN(hours) ? null : Math.round(hours * 4) / 4 }); // round to nearest 0.25
   } catch {
     res.json({ hours: null });
