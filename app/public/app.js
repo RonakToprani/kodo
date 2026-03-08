@@ -888,9 +888,9 @@ function parseDate(text) {
   const today  = new Date();
   today.setHours(0,0,0,0);
 
-  if (/\btoday\b/.test(t)) return new Date(today);
+  if (/\btoday\b|\btdy\b/.test(t)) return new Date(today);
 
-  if (/\btomorrow\b/.test(t)) {
+  if (/\btomorrow\b|\btmr\b|\btmw\b/.test(t)) {
     const d = new Date(today); d.setDate(d.getDate() + 1); return d;
   }
 
