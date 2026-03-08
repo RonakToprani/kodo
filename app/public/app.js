@@ -5,7 +5,6 @@
 // ── State ─────────────────────────────────────────────────────
 let tasks     = { high: [], medium: [], low: [] };
 let analytics = { streak: 0, completionRate: 0, avgTime: 0, dailyCompletions: [], prioritySplit: { now: 0, next: 0, later: 0 }, activeTasks: [] };
-let calendarTasks  = [];
 let calYear, calMonth;
 let timelineChart  = null;
 let donutChart     = null;
@@ -107,10 +106,16 @@ async function processInput() {
   submitBtn.textContent = 'Processing...';
   datePreview.classList.remove('show');
 
-  // Extract calendar tasks from raw input (titles are raw for now)
-  const datedTasks    = extractDatedTasks(raw);
-  const calendarStart = calendarTasks.length;
-  datedTasks.forEach(dt => calendarTasks.push(dt));
+  // Detect due date from input — try whole string, then per comma/semicolon fragment
+  const detectedDate = (() => {
+    const d = parseDate(raw);
+    if (d) return d;
+    for (const frag of raw.split(/[,;]/)) {
+      const fd = parseDate(frag.trim());
+      if (fd) return fd;
+    }
+    return null;
+  })();
 
   // Client-side estimate scrape (Track B, step 1 — instant)
   const scraped  = scrapeEstimate(raw);
@@ -125,9 +130,15 @@ async function processInput() {
     });
     const task = await res.json();
 
-    // Backfill calendar entries with the SLM-rephrased title
-    for (let i = calendarStart; i < calendarStart + datedTasks.length; i++) {
-      calendarTasks[i].title = task.title;
+    // Persist due_date to DB and update local state immediately
+    if (detectedDate) {
+      const iso = `${detectedDate.getFullYear()}-${String(detectedDate.getMonth()+1).padStart(2,'0')}-${String(detectedDate.getDate()).padStart(2,'0')}`;
+      task.due_date = iso;
+      fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ due_date: iso }),
+      }).catch(() => {});
     }
 
     // Inject into local state + render immediately
@@ -807,12 +818,9 @@ function renderCalendar() {
                     month === today.getMonth() &&
                     year  === today.getFullYear();
 
-    // Collect tasks for this cell
-    const cellDate  = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const dayTasks  = calendarTasks.filter(t => {
-      const d = t.date;
-      return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
-    });
+    // Collect tasks for this cell from DB-backed state (persists across refresh)
+    const cellDate = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const dayTasks = [...tasks.high, ...tasks.medium, ...tasks.low].filter(t => t.due_date === cellDate);
 
     const hasTasks   = dayTasks.length > 0;
     const visibleChips = dayTasks.slice(0, 3);
