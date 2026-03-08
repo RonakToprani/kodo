@@ -30,8 +30,9 @@ db.exec(`
   )
 `);
 
-// Add est_hours column when upgrading from v1
+// Migrations — safe to run repeatedly
 try { db.exec(`ALTER TABLE tasks ADD COLUMN est_hours REAL DEFAULT NULL`); } catch (_) {}
+try { db.exec(`ALTER TABLE tasks ADD COLUMN due_date TEXT DEFAULT NULL`);  } catch (_) {}
 
 // ── Settings Table ────────────────────────────────────────────
 db.exec(`
@@ -228,7 +229,7 @@ app.patch('/api/tasks/:id', (req, res) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
-  const { title, description, priority, done, est_hours } = req.body;
+  const { title, description, priority, done, est_hours, due_date } = req.body;
 
   if (title !== undefined) {
     db.prepare('UPDATE tasks SET title = ? WHERE id = ?').run(title, id);
@@ -249,6 +250,9 @@ app.patch('/api/tasks/:id', (req, res) => {
   }
   if (est_hours !== undefined) {
     db.prepare('UPDATE tasks SET est_hours = ? WHERE id = ?').run(est_hours, id);
+  }
+  if (due_date !== undefined) {
+    db.prepare('UPDATE tasks SET due_date = ? WHERE id = ?').run(due_date, id);
   }
 
   const updated = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
